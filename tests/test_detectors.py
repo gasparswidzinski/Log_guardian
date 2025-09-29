@@ -1,6 +1,7 @@
 import datetime as dt
 import unittest
 
+
 from main import (
     detect_failed_login_burst,
     detect_unusual_success,

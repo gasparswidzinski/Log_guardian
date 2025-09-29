@@ -1,34 +1,55 @@
 ![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
-![CI](https://github.com/gasparswidzinski/Log_guardian)
+![CI](https://github.com/gasparswidzinski/Log_guardian/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
+# Log Guardian
 
-# Log Guardian (paso a paso)
+Análisis **defensivo** de logs (Windows y Linux) con detección de:
+- **Ráfagas de fallos de login** (Windows `4625`, Linux `Failed password`)
+- **Logins exitosos inusuales** (Windows `4624`, Linux `Accepted …`)
+- **Escalada de privilegios** (Linux `sudo` / `su`, Windows `4672/4688` si están en el CSV)
 
-Herramienta **defensiva** para **análisis de logs** de Windows (CSV exportado) con detección de **ráfagas de fallos de login** (EventID 4625).  
-Objetivo: demostrar **automatización**, **lógica de detección** y **generación de reportes** (CSV) de forma clara y profesional.
+Incluye **configuración por archivo**, **reporte CSV**, y **alertas por correo** (Mailtrap/Gmail) para mostrar **automatización + lógica de detección** en un proyecto profesional y simple de ejecutar.
 
-## Características (versión actual)
-- Parser de **CSV** exportado del Visor de Eventos (Security).
-- Regla: **failed_login_burst** → N fallos 4625 en una ventana de T minutos.
-- **Configurable** mediante `config.toml`.
-- **Exporta CSV** con hallazgos.
+---
+
+## Características
+- Parsers:
+  - **Windows (CSV)** exportado del *Security Log*.
+  - **Linux (`/var/log/auth.log`)** estilo Debian/Ubuntu.
+- Reglas:
+  - `failed_login_burst`: N fallos dentro de T minutos por `(usuario, IP)`.
+  - `unusual_success`: login exitoso fuera de horario y/o desde IP no permitida.
+  - `privilege_escalation`: `sudo`/`su` (Linux) y 4672/4688 (Windows, si aplica).
+- **Configurable** con `config.toml`.
+- **Reporte CSV** de hallazgos.
+- **Alertas por correo** (desactivadas por defecto para evitar envíos accidentales).
+- **Tests + CI (GitHub Actions)**.
+
+---
 
 ## Estructura
-log-guardian/
+Log_guardian/
 ├─ main.py
 ├─ config.toml
-└─ samples/
-    |__security_sample.csv
+├─ samples/
+│ ├─ security_sample.csv # Windows
+│ └─ auth_sample.log # Linux
+├─ tests/
+│ └─ test_detectors.py
+└─ .github/workflows/
+   └─ ci.yml
 
-## Uso
-```bash
-# Activar entorno, luego:
-python main.py --input .\samples\security_sample.csv --config .\config.toml --out .\out\findings.csv
 
-## Logica de Deteccion
--Failed Login Burst (4625)
--Se agrupan eventos por (usuario, IP).
--Se usa una ventana deslizante de window_minutes.
--Si el conteo llega a threshold dentro de la ventana → hallazgo HIGH.
--Se exporta un CSV con timestamp, rule, severity, user, src_ip, host, message.
+## Requisitos
+- **Python 3.11+**
+- Windows para generar CSV del *Security Log* (o usar `samples/`).
+- (Opcional) Linux/WSL/VM para `auth.log`.
+- Entorno virtual recomendado.
+
+**Entorno virtual (PowerShell)**
+```powershell
+py -3 -m venv .venv
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+.\.venv\Scripts\Activate.ps1
+python --version

@@ -11,7 +11,7 @@ enforce_business_hours = true
 
 [alerts.email]
 cooldown_seconds = 3
-enabled = true
+enabled = false
 smtp_host = "sandbox.smtp.mailtrap.io"
 smtp_port = 587           # si tu red bloquea 587, probá 2525
 use_tls = true            # STARTTLS
