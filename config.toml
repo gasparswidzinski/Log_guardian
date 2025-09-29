@@ -1,0 +1,21 @@
+[general]
+business_hours = "08:00-20:00"
+
+[rules.failed_login_burst]
+threshold = 5
+window_minutes = 10
+
+[rules.unusual_success]
+allowed_cidrs = ["10.0.0.0/8","192.168.0.0/16","172.16.0.0/12"]
+enforce_business_hours = true
+
+[alerts.email]
+cooldown_seconds = 3
+enabled = true
+smtp_host = "sandbox.smtp.mailtrap.io"
+smtp_port = 587           # si tu red bloquea 587, probá 2525
+use_tls = true            # STARTTLS
+username = "86de0950d30036"
+from_addr = "logguardian@example.com"
+to_addrs = ["test@local.test"]
+min_severity = "LOW"
