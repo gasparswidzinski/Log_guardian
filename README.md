@@ -35,7 +35,7 @@ Incluye **configuración por archivo**, **reporte CSV**, **alertas por correo** 
 
 ---
 
-## ![Sección](
+## ![Sección](https://img.shields.io/badge/-CARACTER%C3%8DSTICAS-blue)
 - Parsers:
   - **Windows (CSV)**: exportado del *Security Log* (Visor de eventos).
   - **Linux (`/var/log/auth.log`)**: estilo Debian/Ubuntu (SSH + sudo/su).
@@ -51,7 +51,7 @@ Incluye **configuración por archivo**, **reporte CSV**, **alertas por correo** 
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-ESTRUCTURA-blue)
 ```text
 Log_guardian/
 ├─ main.py
@@ -71,7 +71,7 @@ Log_guardian/
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-REQUISITOS-blue)
 - **Python 3.11+**
 - Windows para exportar CSV del *Security Log* (o usar `samples/`).
 - (Opcional) Linux/WSL/VM para `auth.log`.
@@ -79,7 +79,7 @@ Log_guardian/
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-INSTALACI%C3%93N-blue)
 **PowerShell (Windows)**
 ```powershell
 py -3 -m venv .venv
@@ -90,7 +90,7 @@ python --version
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-CONFIGURACI%C3%93N%20(config.toml)-blue)
 ```toml
 [general]
 business_hours = "08:00-20:00"        # Soporta ventanas nocturnas (p.ej., 22:00-06:00)
@@ -117,7 +117,7 @@ cooldown_seconds = 3                  # evita rate limit al probar seguido
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-USO-blue)
 
 ### Windows (CSV)
 ```powershell
@@ -168,7 +168,7 @@ streamlit run app.py
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-FLAGS%20(CLI)-blue)
 
 | Flag         | Obligatorio | Valores              | Descripción                                 |
 |--------------|-------------|----------------------|---------------------------------------------|
@@ -179,7 +179,7 @@ streamlit run app.py
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-SALIDA%20ESPERADA-blue)
 ```text
 Eventos: 7  |  Hallazgos: 2
 Resumen de hallazgos:
@@ -197,7 +197,7 @@ timestamp,rule,severity,user,src_ip,host,message
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-L%C3%93GICA%20DE%20DETECCI%C3%93N-blue)
 
 ### 1) `failed_login_burst` (fuerza bruta / spraying)
 - Fuente: Windows **4625** / Linux **Failed password** (SSH).
@@ -220,7 +220,7 @@ timestamp,rule,severity,user,src_ip,host,message
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-TROUBLESHOOTING-blue)
 - **`TOMLDecodeError` en `config.toml`** → Evitá comillas “inteligentes”; guardá en **UTF-8**.
 - **`getaddrinfo failed` (SMTP)** → revisá `smtp_host`; con Mailtrap: `sandbox.smtp.mailtrap.io`.
 - **`530 Authentication Required` (Gmail)** → falta **App Password** o la variable `LOGGUARDIAN_SMTP_PASS` no está cargada.
@@ -228,7 +228,7 @@ timestamp,rule,severity,user,src_ip,host,message
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-PRIVACIDAD%20%26%20BUENAS%20PR%C3%81CTICAS-blue)
 - No subas datos reales; usá `samples/`.
 - Ajustá `allowed_cidrs` a tus rangos internos.
 - `alerts.email.enabled = false` por defecto (evita envíos accidentales).
@@ -236,7 +236,7 @@ timestamp,rule,severity,user,src_ip,host,message
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-TESTS%20%2B%20CI-blue)
 **Local:**
 ```powershell
 python -m unittest
@@ -245,7 +245,7 @@ python -m unittest
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-ROADMAP-blue)
 - Soporte `EVTX` (Windows) con `python-evtx`.
 - Export **JSONL** + mini dashboard (Streamlit).
 - Regla configurable por **agrupación** (`user_ip` | `ip` | `user`).
@@ -253,5 +253,5 @@ python -m unittest
 
 ---
 
-## ![Sección]
+## ![Sección](https://img.shields.io/badge/-LICENCIA-blue)
 MIT — ver [`LICENSE`](./LICENSE).
