@@ -4,31 +4,54 @@
 
 # Log Guardian
 
-Análisis **defensivo** de logs (Windows y Linux) con detección de:
-- **Ráfagas de fallos de login** (Windows `4625`, Linux `Failed password`)
-- **Logins exitosos inusuales** (Windows `4624`, Linux `Accepted …`)
-- **Escalada de privilegios** (Linux `sudo` / `su`, Windows `4672/4688` si están en el CSV)
+Análisis **defensivo** de logs (Windows y Linux) con detecciones listas para usar y foco en **automatización**:
+- **Ráfagas de fallos de login** → Windows `4625` / Linux `Failed password`
+- **Logins exitosos inusuales** → Windows `4624` / Linux `Accepted …` (IP no permitida y/o fuera de horario)
+- **Escalada de privilegios** → Linux `sudo` / `su` (y opcional 4672/4688 si aparece en CSV de Windows)
 
-Incluye **configuración por archivo**, **reporte CSV**, y **alertas por correo** (Mailtrap/Gmail) para mostrar **automatización + lógica de detección** en un proyecto profesional y simple de ejecutar.
+Incluye **configuración por archivo**, **reporte CSV**, **alertas por correo** (Mailtrap/Gmail) y **dashboard Streamlit**. Viene con **tests** + **CI (GitHub Actions)**.
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-CARACTER%C3%8DSTICAS-blue)
+## Tabla de contenidos
+- [Características](#características)
+- [Estructura](#estructura)
+- [Requisitos](#requisitos)
+- [Instalación](#instalación)
+- [Configuración (`config.toml`)](#configuración-configtoml)
+- [Uso](#uso)
+  - [Windows (CSV)](#windows-csv)
+  - [Linux (`/var/log/auth.log`)](#linux-varlogauthlog)
+  - [Alertas por correo (Mailtrap/Gmail)](#alertas-por-correo-mailtrapgmail)
+- [Dashboard (Streamlit)](#dashboard-streamlit)
+- [Flags (CLI)](#flags-cli)
+- [Salida esperada](#salida-esperada)
+- [Lógica de detección](#lógica-de-detección)
+- [Troubleshooting](#troubleshooting)
+- [Privacidad y buenas prácticas](#privacidad-y-buenas-prácticas)
+- [Tests y CI](#tests-y-ci)
+- [Roadmap](#roadmap)
+- [Licencia](#licencia)
+
+---
+
+## ![Sección](
 - Parsers:
-  - **Windows (CSV)** exportado del *Security Log*.
-  - **Linux (`/var/log/auth.log`)** estilo Debian/Ubuntu.
+  - **Windows (CSV)**: exportado del *Security Log* (Visor de eventos).
+  - **Linux (`/var/log/auth.log`)**: estilo Debian/Ubuntu (SSH + sudo/su).
 - Reglas:
-  - `failed_login_burst`: N fallos dentro de T minutos por `(usuario, IP)`.
-  - `unusual_success`: login exitoso fuera de horario y/o desde IP no permitida.
-  - `privilege_escalation`: `sudo`/`su` (Linux) y 4672/4688 (Windows, si aplica).
+  - `failed_login_burst`: N fallos dentro de T minutos por **(usuario, IP)**.
+  - `unusual_success`: éxito fuera de horario y/o desde IP fuera de **CIDRs** permitidos.
+  - `privilege_escalation`: eventos de **sudo/su** (Linux) y 4672/4688 (Windows si están presentes).
 - **Configurable** con `config.toml`.
-- **Reporte CSV** de hallazgos.
-- **Alertas por correo** (desactivadas por defecto para evitar envíos accidentales).
-- **Tests + CI (GitHub Actions)**.
+- **Exporta CSV** con hallazgos.
+- **Alertas por correo** (Mailtrap/Gmail) con umbral de severidad y **cooldown** (anti rate-limit).
+- **Dashboard Streamlit** para visualizar resultados.
+- **Tests** de reglas + **CI** en GitHub Actions.
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-ESTRUCTURA-blue)
+## ![Sección]
 ```text
 Log_guardian/
 ├─ main.py
@@ -38,19 +61,26 @@ Log_guardian/
 │  └─ auth_sample.log          # Linux
 ├─ tests/
 │  └─ test_detectors.py
+├─ app.py                      # Dashboard (Streamlit)
+├─ requirements.txt            # streamlit, pandas, altair (opcional)
 └─ .github/workflows/
    └─ ci.yml
 ```
 
+> Recomendado: `.gitignore` con `.venv/`, `out/`, `*.csv`, `__pycache__/`, etc.
+
 ---
 
-## ![Sección](https://img.shields.io/badge/-REQUISITOS-blue)
+## ![Sección]
 - **Python 3.11+**
-- Windows para generar CSV del *Security Log* (o usar `samples/`).
+- Windows para exportar CSV del *Security Log* (o usar `samples/`).
 - (Opcional) Linux/WSL/VM para `auth.log`.
 - Entorno virtual recomendado.
 
-**Entorno virtual (PowerShell)**
+---
+
+## ![Sección]
+**PowerShell (Windows)**
 ```powershell
 py -3 -m venv .venv
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
@@ -60,7 +90,7 @@ python --version
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-CONFIGURACI%C3%93N%20(config.toml)-blue)
+## ![Sección]
 ```toml
 [general]
 business_hours = "08:00-20:00"        # Soporta ventanas nocturnas (p.ej., 22:00-06:00)
@@ -87,7 +117,7 @@ cooldown_seconds = 3                  # evita rate limit al probar seguido
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-USO-blue)
+## ![Sección]
 
 ### Windows (CSV)
 ```powershell
@@ -99,24 +129,57 @@ python .\main.py --input .\samples\security_sample.csv --platform windows --conf
 python .\main.py --input .\samples\auth_sample.log --platform linux --config .\config.toml --out .\out\findings_linux.csv
 ```
 
-### Alertas por correo
+### Alertas por correo (Mailtrap/Gmail)
 **Mailtrap (pruebas):**
 ```powershell
 $env:LOGGUARDIAN_SMTP_PASS="TU_PASSWORD_MAILTRAP"
 python -c "import os; print(bool(os.getenv('LOGGUARDIAN_SMTP_PASS')))"  # True
-# en config.toml: [alerts.email] enabled = true, min_severity = "LOW"
+# En config.toml: [alerts.email] enabled = true, min_severity = "LOW"
 ```
-
 **Gmail (producción personal):**
-```text
-- Requiere 2FA y App Password.
-- smtp_host = "smtp.gmail.com", smtp_port = 587, use_tls = true
-- username/from_addr = tu_email@gmail.com y LOGGUARDIAN_SMTP_PASS = <app password>
-```
+- Requiere **2FA** y **App Password**.
+- `smtp_host = "smtp.gmail.com"`, `smtp_port = 587`, `use_tls = true`.
+- `username/from_addr = tu_email@gmail.com` y `LOGGUARDIAN_SMTP_PASS = <app password>`.
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-SALIDA%20ESPERADA-blue)
+## Dashboard (Streamlit)
+
+Visualizá los hallazgos con un tablero simple: filtros, KPIs, series temporales y tabla exportable.
+
+**Instalación rápida**
+```bash
+pip install -r requirements.txt   # o: pip install streamlit pandas altair
+streamlit run app.py
+```
+
+**Uso**
+- En la barra lateral, subí un `findings.csv` o apuntá a `./out/findings.csv`.
+- Filtrá por **fecha, regla, severidad, usuario, host e IP**.
+- Descargá el **CSV filtrado** desde el botón al pie.
+
+**Demo (capturas)**
+
+![Dashboard overview](docs/dashboard-overview.png)
+
+![Distribución reglas/severidad](docs/dashboard-bars.png)
+
+![Tabla de resultados](docs/dashboard-table.png)
+
+---
+
+## ![Sección]
+
+| Flag         | Obligatorio | Valores              | Descripción                                 |
+|--------------|-------------|----------------------|---------------------------------------------|
+| `--input`    | Sí          | ruta a archivo       | CSV (Windows) o `auth.log` (Linux)          |
+| `--platform` | Sí          | `windows` \| `linux` | Selecciona el parser                         |
+| `--config`   | Sí          | ruta a `config.toml` | Configuración de reglas/alertas              |
+| `--out`      | No          | ruta a CSV           | Archivo de salida (default: `findings.csv`)  |
+
+---
+
+## ![Sección]
 ```text
 Eventos: 7  |  Hallazgos: 2
 Resumen de hallazgos:
@@ -125,7 +188,7 @@ Resumen de hallazgos:
 CSV generado: .\out\findings.csv
 ```
 
-**CSV (`findings.csv`):**
+**CSV (findings.csv):**
 ```csv
 timestamp,rule,severity,user,src_ip,host,message
 2025-09-28T10:08:00,failed_login_burst,HIGH,gaspar,203.0.113.5,PC-01,"5 fails en 10 min"
@@ -134,7 +197,7 @@ timestamp,rule,severity,user,src_ip,host,message
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-L%C3%93GICA%20DE%20DETECCI%C3%93N-blue)
+## ![Sección]
 
 ### 1) `failed_login_burst` (fuerza bruta / spraying)
 - Fuente: Windows **4625** / Linux **Failed password** (SSH).
@@ -157,16 +220,32 @@ timestamp,rule,severity,user,src_ip,host,message
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-TESTS%20%2B%20CI-blue)
+## ![Sección]
+- **`TOMLDecodeError` en `config.toml`** → Evitá comillas “inteligentes”; guardá en **UTF-8**.
+- **`getaddrinfo failed` (SMTP)** → revisá `smtp_host`; con Mailtrap: `sandbox.smtp.mailtrap.io`.
+- **`530 Authentication Required` (Gmail)** → falta **App Password** o la variable `LOGGUARDIAN_SMTP_PASS` no está cargada.
+- **`Too many emails per second` (Mailtrap)** → esperá 2–3 s entre corridas o subí `cooldown_seconds`.
+
+---
+
+## ![Sección]
+- No subas datos reales; usá `samples/`.
+- Ajustá `allowed_cidrs` a tus rangos internos.
+- `alerts.email.enabled = false` por defecto (evita envíos accidentales).
+- Minimiza PII en mensajes/CSV.
+
+---
+
+## ![Sección]
 **Local:**
 ```powershell
 python -m unittest
 ```
-**CI:** GitHub Actions corre en cada push/PR (ver badge de CI). Workflow en `.github/workflows/ci.yml`.
+**CI:** GitHub Actions corre en cada push/PR. Workflow en `.github/workflows/ci.yml`.
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-ROADMAP-blue)
+## ![Sección]
 - Soporte `EVTX` (Windows) con `python-evtx`.
 - Export **JSONL** + mini dashboard (Streamlit).
 - Regla configurable por **agrupación** (`user_ip` | `ip` | `user`).
@@ -174,5 +253,5 @@ python -m unittest
 
 ---
 
-## ![Sección](https://img.shields.io/badge/-LICENCIA-blue)
+## ![Sección]
 MIT — ver [`LICENSE`](./LICENSE).
